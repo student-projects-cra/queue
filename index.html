@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ตรวจสอบคิว</title>
+</head>
+<body>
+
+<h2>สถานะคิวของคุณ</h2>
+<div id="result">กำลังโหลด...</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { getDoc, doc } from
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const params = new URLSearchParams(window.location.search);
+const vn = params.get("vn");
+
+if (!vn) {
+  document.getElementById("result").innerText = "ไม่พบ VN";
+} else {
+  const snap = await getDoc(doc(db, "queues", vn));
+  if (!snap.exists()) {
+    document.getElementById("result").innerText = "ยังไม่ถูกตั้งคิว";
+  } else {
+    const q = snap.data();
+    document.getElementById("result").innerHTML = `
+      <p>VN: ${q.vn}</p>
+      <p>ลำดับคิว: ${q.order}</p>
+      <p>สถานะ: ${q.status}</p>
+      <p>ผลเลือด: ${q.lab}</p>
+    `;
+  }
+}
+</script>
+
+</body>
+</html>
