@@ -14,6 +14,7 @@ VN002
 VN003"></textarea><br><br>
 
 <button onclick="saveQueue()">บันทึกคิว</button>
+
 <button onclick="resetQueue()"
   style="background:#d32f2f;color:white;margin-left:10px">
   รีเซ็ตคิววันนี้
@@ -21,8 +22,13 @@ VN003"></textarea><br><br>
 
 <script type="module">
 import { db } from "./firebase.js";
-import { setDoc, doc } from
-"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  setDoc,
+  doc,
+  collection,
+  getDocs,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 window.saveQueue = async () => {
   const lines = document.getElementById("vnList").value
@@ -41,6 +47,20 @@ window.saveQueue = async () => {
   }
 
   alert("ตั้งคิวเรียบร้อย");
+};
+
+window.resetQueue = async () => {
+  const ok = confirm("ยืนยันลบคิวทั้งหมดของวันนี้?");
+  if (!ok) return;
+
+  const snap = await getDocs(collection(db, "queues"));
+
+  for (const d of snap.docs) {
+    await deleteDoc(doc(db, "queues", d.id));
+  }
+
+  alert("รีเซ็ตคิวเรียบร้อย");
+  document.getElementById("vnList").value = "";
 };
 </script>
 
