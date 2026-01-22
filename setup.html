@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ตั้งคิววันนี้</title>
+</head>
+<body>
+
+<h2>ตั้งคิวผู้ป่วย (VN)</h2>
+
+<textarea id="vnList" rows="10" cols="30"
+placeholder="VN001
+VN002
+VN003"></textarea><br><br>
+
+<button onclick="saveQueue()">บันทึกคิว</button>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { setDoc, doc } from
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+window.saveQueue = async () => {
+  const lines = document.getElementById("vnList").value
+    .split("\n")
+    .map(v => v.trim())
+    .filter(v => v !== "");
+
+  for (let i = 0; i < lines.length; i++) {
+    await setDoc(doc(db, "queues", lines[i]), {
+      vn: lines[i],
+      order: i + 1,
+      status: "waiting",
+      lab: "pending",
+      called: false
+    });
+  }
+
+  alert("ตั้งคิวเรียบร้อย");
+};
+</script>
+
+</body>
+</html>
