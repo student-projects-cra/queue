@@ -3,36 +3,111 @@
 <head>
   <meta charset="utf-8">
   <title>ตรวจสอบคิว</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    .waiting {
+      color: #555;
+    }
+
+    .called {
+      color: green;
+      font-weight: bold;
+    }
+
+    .waitlab {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .done {
+      color: gray;
+      text-decoration: line-through;
+    }
+  </style>
 </head>
+
 <body>
 
 <h2>สถานะคิวของคุณ</h2>
 <div id="result">กำลังโหลด...</div>
 
 <script type="module">
-import { db } from "./firebase.js";
-import { getDoc, doc } from
-"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { db } from "./firebase.js";
+  import { getDoc, doc } from
+  "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const params = new URLSearchParams(window.location.search);
-const vn = params.get("vn");
-
-if (!vn) {
-  document.getElementById("result").innerText = "ไม่พบ VN";
-} else {
-  const snap = await getDoc(doc(db, "queues", vn));
-  if (!snap.exists()) {
-    document.getElementById("result").innerText = "ยังไม่ถูกตั้งคิว";
-  } else {
-    const q = snap.data();
-    document.getElementById("result").innerHTML = `
-      <p>VN: ${q.vn}</p>
-      <p>ลำดับคิว: ${q.order}</p>
-      <p>สถานะ: ${q.status}</p>
-      <p>ผลเลือด: ${q.lab}</p>
-    `;
+  // ===== ฟังก์ชันคำนวณเวลา =====
+  function formatTime(date) {
+    return date.toTimeString().slice(0,5);
   }
-}
+
+  function getQueueTime(order) {
+    const startHour = 9;      // เริ่ม 09:00
+    const startMinute = 0;
+    const perQueue = 10;      // 10 นาที / คน
+
+    const start = new Date();
+    start.setHours(startHour, startMinute, 0, 0);
+
+    const qStart = new Date(start.getTime() + (order - 1) * perQueue * 60000);
+    const qEnd   = new Date(qStart.getTime() + perQueue * 60000);
+
+    return `${formatTime(qStart)} - ${formatTime(qEnd)}`;
+  }
+
+  // ===== ดึง VN จาก URL =====
+  const params = new URLSearchParams(window.location.search);
+  const vn = params.get("vn");
+
+  if (!vn) {
+    document.getElementById("result").innerText = "ไม่พบ VN";
+  } else {
+    const snap = await getDoc(doc(db, "queues", vn));
+
+    if (!snap.exists()) {
+      document.getElementById("result").innerText = "ยังไม่ถูกตั้งคิว";
+    } else {
+      const q = snap.data();
+      const timeSlot = getQueueTime(q.order);
+
+      let statusText = "";
+      let statusClass = "";
+
+      if (q.status === "waiting") {
+        statusText = "รอเรียกคิว";
+        statusClass = "waiting";
+      }
+
+      if (q.status === "called") {
+        statusText = "กำลังเรียกคิว";
+        statusClass = "called";
+      }
+
+      if (q.lab === "waiting") {
+        statusText = "รอผลเลือด";
+        statusClass = "waitlab";
+      }
+
+      if (q.status === "done") {
+        statusText = "ตรวจเสร็จแล้ว";
+        statusClass = "done";
+      }
+
+      document.getElementById("result").innerHTML = `
+        <p><strong>VN:</strong> ${q.vn}</p>
+        <p><strong>ลำดับคิว:</strong> ${q.order}</p>
+        <p><strong>เวลาประมาณ:</strong> ${timeSlot}</p>
+        <p class="${statusClass}">
+          <strong>สถานะ:</strong> ${statusText}
+        </p>
+      `;
+    }
+  }
 </script>
 
 </body>
