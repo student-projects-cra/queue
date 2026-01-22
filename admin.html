@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>เรียกคิว</title>
+</head>
+<body>
+
+<h2>จัดการคิว</h2>
+<div id="list"></div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import {
+  collection, getDocs, updateDoc, doc, query, orderBy
+} from
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const q = query(collection(db, "queues"), orderBy("order"));
+const snap = await getDocs(q);
+
+let html = "";
+snap.forEach(d => {
+  const q = d.data();
+  html += `
+    <div style="border:1px solid #ccc; padding:8px; margin:6px">
+      <b>${q.vn}</b> | คิว ${q.order}<br>
+      สถานะ: ${q.status} | เลือด: ${q.lab}<br>
+      <button onclick="call('${q.vn}')">เรียก</button>
+      <button onclick="waitLab('${q.vn}')">รอผลเลือด</button>
+      <button onclick="done('${q.vn}')">เสร็จสิ้น</button>
+    </div>
+  `;
+});
+
+document.getElementById("list").innerHTML = html;
+
+window.call = async (vn) => {
+  await updateDoc(doc(db, "queues", vn), { status: "called" });
+  location.reload();
+};
+
+window.waitLab = async (vn) => {
+  await updateDoc(doc(db, "queues", vn), { lab: "waiting" });
+  location.reload();
+};
+
+window.done = async (vn) => {
+  await updateDoc(doc(db, "queues", vn), { status: "done" });
+  location.reload();
+};
+</script>
+
+</body>
+</html>
