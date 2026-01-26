@@ -70,7 +70,7 @@
     const snap = await getDoc(doc(db, "queues", vn));
 
     if (!snap.exists()) {
-      document.getElementById("result").innerText = "ยังไม่ถูกตั้งคิว";
+      document.getElementById("result").innerText = "คุณไม่มีคิวในวันนี้";
     } else {
       const q = snap.data();
       const timeSlot = getQueueTime(q.order);
